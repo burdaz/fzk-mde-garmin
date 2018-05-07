@@ -430,7 +430,7 @@ my $ACTIONTARGET = 4;
 my $LANGCODE = 0;
 my $LANGDESC = 1;
 
-my $VERSION = '1.3.13 - 2016/11/11';
+my $VERSION = '1.3.14 - 2018/05/07';
 
 # Maximale Speichernutzung (Heapsize im MB) beim Splitten und Compilieren
 my $javaheapsize = 1536;
@@ -486,6 +486,7 @@ my $unicode     = $EMPTY;
 my $downloadbar = $EMPTY;
 my $continuedownload = $EMPTY;
 my $downloadspeed = $EMPTY;
+my $dempath = $EMPTY;
 
 my $actionname = $EMPTY;
 my $actiondesc = $EMPTY;
@@ -521,7 +522,7 @@ my $typfilelangcode = $EMPTY;
 
 
 # get the command line parameters
-if ( ! GetOptions ( 'h|?|help' => \$help, 'o|optional' => \$optional, 'u|unicode' => \$unicode, 'downloadbar' => \$downloadbar, 'continuedownload' => \$continuedownload, 'downloadspeed=s' => \$downloadspeed, 'ram=s' => \$ram, 'cores=s' => \$cores, 'ele=s' => \$ele, 'hqele' => \$hqele, 'typfile=s' => \$typfile, 'style=s' => \$styledir, 'language=s' => \$language, 'ntl=s' => \$nametaglist  ) ) {
+if ( ! GetOptions ( 'h|?|help' => \$help, 'o|optional' => \$optional, 'u|unicode' => \$unicode, 'downloadbar' => \$downloadbar, 'continuedownload' => \$continuedownload, 'downloadspeed=s' => \$downloadspeed, 'ram=s' => \$ram, 'cores=s' => \$cores, 'ele=s' => \$ele, 'hqele' => \$hqele, 'typfile=s' => \$typfile, 'style=s' => \$styledir, 'language=s' => \$language, 'ntl=s' => \$nametaglist, 'dempath=s' => \$dempath ) ) {
   printf { *STDOUT } ( "ERROR:\n  Unknown option.\n\n\n" );
   show_usage ();
   exit(1);   
@@ -2389,6 +2390,28 @@ sub create_cfgfile {
       . "#   Makes some operations more verbose. Mostly used with --list-styles.\n" 
       . "verbose\n" );
 
+  if ( $dempath ne $EMPTY ) {
+     printf { $fh }
+       (   "\n"
+         . "# --dem\n" 
+         . "# The option expects a comma separated list of paths to directories or zip\n"
+         . "# files containing *.hgt files. Directories are searched for *.hgt files and\n"
+         . "#  also for *.hgt.zip and *.zip files.\n"
+         . "# The list is searched in the given order, so if you want to use 1'' files\n"
+         . "# make sure that they are found first. There are different sources for *.hgt\n"
+         . "# files, some have so called voids which are areas without data.\n"
+         . "# Those should be avoided.\n"
+         . "dem=%s\n", $dempath );
+     printf { $fh }
+       (   "\n"
+         . "# --dem-poly=filename\n" 
+         . "# If given, the filename should point to a *.poly file in osmosis polygon file\n"
+         . "# format. The polygon described in the file is used to determine the area for\n"
+         . "# which DEM data should be added to the map. If not given, the DEM data\n"
+         . "# will cover the full tile area.\n"
+         . "dem-poly=%s.poly\n", "$BASEPATH/poly/$mapname" );
+ 		 
+    }
 #  printf { $fh }
 #    (   "\n" 
 #      . "# --x-housenumbers\n"
@@ -5601,6 +5624,9 @@ sub show_actionsummary {
     if ( $nametaglist ne $EMPTY ) {
       printf { *STDOUT } ( "Ntl:        name-tag-list=%s\n", $nametaglist );  
     }
+	if (( $actionname eq "build" ) && ( $dempath ne $EMPTY )) {
+	  printf { *STDOUT } ( "DEM path:   %s\n", $dempath );
+	}
     if ( ( $releasestring ne $EMPTY ) && ( $releasenumeric ne $EMPTY ) ) {
         printf { *STDOUT }   ( "Release:    %s / %s\n",$releasestring,$releasenumeric );
     }
@@ -5646,6 +5672,7 @@ sub show_usage {
       . "           [--typfile=\"<filename>\"] [--style=\"<dirname>\"] \\\n"
       . "           [--language=\"<lang>\"] [--unicode] [--ntl=\"<name-tag-list>\"] \\\n"
       . "           [--downloadbar] [--downloadspeed=<value>] [--continuedownload]\\\n"
+      . "           [--dempath=<path>]\\\n"
       . "           <Action> <ID> | <Code> | <Map> [PPO] ... [PPO]\n"
       . "  or\n"
       . "perl $programName bootstrap [urls <url_bounds> <url_sea>]\n"
@@ -5705,6 +5732,11 @@ sub show_help {
       . "             - can only work if you don't use the 'create' action, which cleans out any files from the working directories\n"
       . "             - using this option on fully completed downloads will fail to download anything new.\n"
       . "             - not guaranteed to work always and might create data garbage, but worth a try on huge downloads\n"
+	  . "--dempath\n"
+	  . "           = specify a directory with HGT files used to add a Digital Elevation Model subfile to the map (build).\n"
+	  . "                --dempath=D:/fzk/hgtfiles\n"
+	  . "             N.B. On Windows, use forward slashes.\n"
+      . "             Please check mkgmap documentation for more information.\n"
       . "\n"
       . "PPO        = preprocessor options (multiple possible), to be invoked with D<option>\n"
       . "\n"
